@@ -264,6 +264,13 @@
         await loadDetail();
         // ② 刷新概覽（chip cnt 會跟著變）
         await loadOverview();
+        // ✅ 刪除成功提示（保留你要的訊息）
+        Swal.fire({
+          icon: 'success',
+          title: `單號:${base} 已刪除`,
+          timer: 900,
+          showConfirmButton: false
+        });
       } catch (err) {
         console.error(err);
       }

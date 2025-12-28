@@ -85,6 +85,13 @@
   font-size: .75rem; padding: 0 .35rem;
 }
 
+/* 承攬商 chip 可點擊提示 */
+.withdraw-day .chip{
+  cursor: pointer;
+}
+.withdraw-day .chip:hover{
+  filter: brightness(0.98);
+}
 
 /* RWD */
 @media (max-width: 576px) {
