@@ -12,7 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 避免把敏感檔案帶上（即使 .gitignore 沒上版控，仍加一道保險）
+      # 避免把敏感檔案帶上（即使 .gitignore 沒上版控，仍加一道保險 ）
       - name: Remove sensitive files (safety)
         run: |
           rm -f .env
