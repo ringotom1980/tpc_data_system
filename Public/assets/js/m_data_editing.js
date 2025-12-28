@@ -171,7 +171,7 @@
           return;
         }
 
-        hint.textContent = `含有紀錄的日期：${data.total_days} 天`;
+        hint.textContent = `有紀錄的日期：${data.total_days} 天(點擊承攬商可選擇刪除單號)`;
         renderDays(days);
       } catch (err) {
         console.error(err);

@@ -206,7 +206,7 @@ include __DIR__ . '/../../partials/header.php';
           </div>
 
           <div class="text-muted small mt-2">
-            刪除為立即生效（不提示、不復原）。
+            刪除後將立即移除該單號。
           </div>
         </div>
       </div>
