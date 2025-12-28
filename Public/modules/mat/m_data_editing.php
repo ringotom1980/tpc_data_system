@@ -60,11 +60,6 @@ include __DIR__ . '/../../partials/header.php';
           <h6 class="card-title mb-3">提領日期</h6>
           <div class="d-flex flex-wrap gap-2 align-items-center">
             <input type="date" id="withdraw_date" class="form-control">
-            <!-- <div class="btn-group">
-              <button class="btn btn-outline-secondary btn-sm" type="button" data-quick="today">今天</button>
-              <button class="btn btn-outline-secondary btn-sm" type="button" data-quick="yesterday">昨天</button>
-              <button class="btn btn-outline-secondary btn-sm" type="button" data-quick="this-week">本週</button>
-            </div> -->
           </div>
           <!-- <p class="text-muted small mb-0 mt-2">此日期將作為上傳與排序的參照條件。</p> -->
         </div>
@@ -81,8 +76,7 @@ include __DIR__ . '/../../partials/header.php';
           <p class="text-muted small mb-2" id="withdraw_overview_hint">載入中…</p>
 
           <!-- 日期→承攬商網格 -->
-          <div id="withdraw_overview_grid" class="row row-cols-1 row-cols-sm-2 g-2"
-            style="max-height: 320px; overflow:auto;">
+          <div id="withdraw_overview_grid" class="row row-cols-1 row-cols-sm-2 g-2 withdraw-overview-grid">
             <!-- 動態載入 -->
           </div>
         </div>

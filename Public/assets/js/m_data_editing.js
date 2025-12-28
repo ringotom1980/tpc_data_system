@@ -124,15 +124,15 @@
             </div>
             <div class="chips">
               ${(contractors || [])
-                .map(
-                  (c) => `
-                  <span class="chip">
-                    <span class="code fw-semibold">${c.contractor_code ?? ''}</span>
-                    
-                  </span>
-                `,
-                )
-                .join('')}
+            .map(
+              (c) => `
+            <span class="chip">
+              <span class="code fw-semibold">${c.contractor_code ?? ''}</span>
+              <span class="cnt text-muted ms-1">(${c.cnt ?? 0})</span>
+            </span>
+              `,
+             )
+            .join('')}
             </div>
           </div>
         `;
@@ -652,14 +652,13 @@
       <td class="text-center seq">${idx + 1}</td>
       <td class="text-center">${item.material_number ?? ''}</td>
       <td>${item.name_specification ?? ''}</td>
-      ${
-        editMode
-          ? `<td class="text-center">
+      ${editMode
+        ? `<td class="text-center">
           <button type="button" class="btn btn-sm btn-outline-danger btn-del" data-mat="${item.material_number ?? ''}">
             刪除
           </button>
         </td>`
-          : ``
+        : ``
       }
     </tr>
   `;

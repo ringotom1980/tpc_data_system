@@ -48,6 +48,12 @@
   margin-bottom: .5rem; /* 與右欄一致的緊湊感 */
 }
 
+/* 近一個月提領概覽：可捲動區 */
+.withdraw-overview-grid{
+  max-height: 320px;
+  overflow: auto;
+}
+
 /* 近月提領：日期卡片 */
 .withdraw-day {
   border: 1px solid #e5e7eb; /* tailwind gray-200 風 */
