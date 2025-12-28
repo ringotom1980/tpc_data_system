@@ -268,8 +268,12 @@
         Swal.fire({
           icon: 'success',
           title: `單號:${base} 已刪除`,
-          timer: 900,
-          showConfirmButton: false
+          showConfirmButton: true,
+          confirmButtonText: '確認',
+          timer: 3000,              // 3 秒自動關閉
+          timerProgressBar: true,   // 顯示倒數條（UX 清楚）
+          allowOutsideClick: true,
+          allowEscapeKey: true
         });
       } catch (err) {
         console.error(err);
