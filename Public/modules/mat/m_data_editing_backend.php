@@ -309,6 +309,89 @@ try {
         ]);
         exit;
     }
+    
+    /* -------------------- 提領明細：指定日期 + 承攬商，回傳「去尾碼」後的單號清單 -------------------- */
+    if ($action === 'withdraw_overview_detail') {
+        $d = (string)($_GET['withdraw_date'] ?? $_POST['withdraw_date'] ?? ($json['withdraw_date'] ?? ''));
+        $cc = (string)($_GET['contractor_code'] ?? $_POST['contractor_code'] ?? ($json['contractor_code'] ?? ''));
+
+        $d = trim($d);
+        $cc = trim($cc);
+
+        if ($d === '' || $cc === '') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '缺少 withdraw_date 或 contractor_code'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // voucher_base = 去掉最後 _1~2碼（例如 T13_L253946_1 => T13_L253946）
+        $sql = <<<SQL
+          SELECT
+            REGEXP_REPLACE(voucher, '_[0-9]{1,2}$', '') AS voucher_base,
+            COUNT(*) AS cnt
+          FROM mat_material_number
+          WHERE withdraw_date = ?
+            AND contractor_code = ?
+          GROUP BY voucher_base
+          ORDER BY voucher_base ASC
+        SQL;
+
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$d, $cc]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $items = [];
+        foreach ($rows as $r) {
+            $items[] = [
+                'voucher_base' => (string)$r['voucher_base'],
+                'cnt' => (int)$r['cnt'],
+            ];
+        }
+
+        echo json_encode([
+            'success' => true,
+            'withdraw_date' => $d,
+            'contractor_code' => $cc,
+            'count' => count($items),
+            'items' => $items,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    /* -------------------- 提領刪除：刪除同一 base 的所有尾碼（不提示） -------------------- */
+    if ($action === 'withdraw_overview_delete') {
+        $d = (string)($_POST['withdraw_date'] ?? ($json['withdraw_date'] ?? ''));
+        $cc = (string)($_POST['contractor_code'] ?? ($json['contractor_code'] ?? ''));
+        $base = (string)($_POST['voucher_base'] ?? ($json['voucher_base'] ?? ''));
+
+        $d = trim($d);
+        $cc = trim($cc);
+        $base = trim($base);
+
+        if ($d === '' || $cc === '' || $base === '') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '缺少 withdraw_date / contractor_code / voucher_base'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // pattern: ^T13_L253946_[0-9]{1,2}$
+        // base 只預期由英數與底線組成；若你未來可能有特殊字元，再做更嚴格 escape。
+        $pattern = '^' . $base . '_[0-9]{1,2}$';
+
+        $stmt = $conn->prepare("
+          DELETE FROM mat_material_number
+          WHERE withdraw_date = ?
+            AND contractor_code = ?
+            AND voucher REGEXP ?
+        ");
+        $stmt->execute([$d, $cc, $pattern]);
+
+        echo json_encode([
+            'success' => true,
+            'deleted' => (int)$stmt->rowCount(),
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 
     /* -------------------- 未匹配任何 action -------------------- */
     echo json_encode(['success' => false, 'message' => 'Unknown action'], JSON_UNESCAPED_UNICODE);

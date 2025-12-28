@@ -126,12 +126,12 @@
               ${(contractors || [])
             .map(
               (c) => `
-            <span class="chip">
+            <span class="chip" data-date="${date}" data-contractor="${c.contractor_code ?? ''}">
               <span class="code fw-semibold">${c.contractor_code ?? ''}</span>
               <span class="cnt text-muted ms-1">(${c.cnt ?? 0})</span>
             </span>
               `,
-             )
+            )
             .join('')}
             </div>
           </div>
@@ -178,6 +178,115 @@
         hint.textContent = '讀取失敗，請稍後再試';
       }
     }
+    // ===== 明細 Modal（點 chip 開啟）=====
+    const modalEl = document.getElementById('withdrawVouchersModal');
+    const tbodyDetail = document.getElementById('withdrawVouchersTbody');
+    const metaEl = document.getElementById('withdrawVouchersMeta');
+    const countEl = document.getElementById('withdrawVouchersCount');
+
+    let currentDetail = { date: '', contractor: '' };
+
+    function escHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (m) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[m]);
+    }
+
+    function openDetailModal(date, contractor) {
+      if (!modalEl || !tbodyDetail || !metaEl || !countEl) return;
+
+      currentDetail.date = date;
+      currentDetail.contractor = contractor;
+
+      metaEl.textContent = `${date}｜${contractor}`;
+      countEl.textContent = '—';
+      tbodyDetail.innerHTML = `<tr><td colspan="3" class="text-center text-muted">載入中…</td></tr>`;
+
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      loadDetail();
+    }
+
+    async function loadDetail() {
+      try {
+        const url = new URL(API, location.origin);
+        url.searchParams.set('action', 'withdraw_overview_detail');
+        url.searchParams.set('withdraw_date', currentDetail.date);
+        url.searchParams.set('contractor_code', currentDetail.contractor);
+
+        const res = await fetch(url.toString(), {
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' },
+        });
+        const data = await res.json();
+        if (!data?.success) throw new Error(data?.message || '讀取失敗');
+
+        const items = Array.isArray(data.items) ? data.items : [];
+        countEl.textContent = `共 ${items.length} 筆`;
+
+        if (items.length === 0) {
+          tbodyDetail.innerHTML = `<tr><td colspan="3" class="text-center text-muted">無資料</td></tr>`;
+          return;
+        }
+
+        tbodyDetail.innerHTML = items.map((it, i) => `
+          <tr>
+            <td class="text-center">${i + 1}</td>
+            <td class="text-center fw-semibold">${escHtml(it.voucher_base)}</td>
+            <td class="text-center">
+              <button type="button" class="btn btn-sm btn-outline-danger btn-withdraw-del"
+                data-base="${escHtml(it.voucher_base)}">刪除</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+        tbodyDetail.innerHTML = `<tr><td colspan="3" class="text-center text-danger">讀取失敗</td></tr>`;
+      }
+    }
+
+    async function deleteBase(base) {
+      // 不 confirm、不提示；失敗只 console
+      try {
+        const res = await fetch(`${API}?action=withdraw_overview_delete`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            withdraw_date: currentDetail.date,
+            contractor_code: currentDetail.contractor,
+            voucher_base: base,
+          }),
+        });
+        const data = await res.json();
+        if (!data?.success) throw new Error(data?.message || '刪除失敗');
+
+        // ① 重新載入明細
+        await loadDetail();
+        // ② 刷新概覽（chip cnt 會跟著變）
+        await loadOverview();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // 點 chip：開明細
+    grid.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      const date = chip.getAttribute('data-date') || '';
+      const contractor = chip.getAttribute('data-contractor') || '';
+      if (!date || !contractor) return;
+      openDetailModal(date, contractor);
+    });
+
+    // 點明細刪除：直接刪
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-withdraw-del');
+      if (!btn) return;
+      const base = btn.getAttribute('data-base') || '';
+      if (!base) return;
+      deleteBase(base);
+    });
 
     // 初始化
     loadOverview();

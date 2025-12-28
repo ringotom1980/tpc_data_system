@@ -173,6 +173,45 @@ include __DIR__ . '/../../partials/header.php';
       </div>
     </div>
   </div>
+  <!-- 提領單號明細 Modal（日期 + 承攬商） -->
+  <div class="modal fade" id="withdrawVouchersModal" tabindex="-1" aria-labelledby="withdrawVouchersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="withdrawVouchersModalLabel">提領單號明細</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="text-muted small" id="withdrawVouchersMeta">—</div>
+            <div class="text-muted small" id="withdrawVouchersCount">—</div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle mb-0">
+              <thead class="table-light text-center">
+                <tr>
+                  <th style="width:70px;">項次</th>
+                  <th>單號</th>
+                  <th style="width:110px;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="withdrawVouchersTbody">
+                <tr>
+                  <td colspan="3" class="text-center text-muted">載入中…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="text-muted small mt-2">
+            刪除為立即生效（不提示、不復原）。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     document.title = '苗栗區處・材料管理科｜資料編輯';
