@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * 啟動安全的 Session、提供 CSRF、登入/登出、取得使用者、與 require_login()
- * 其他頁面引入本檔後，可直接呼叫 require_login();
+ * 其他頁面引入本檔後，可直接呼叫 require_login( );
  */
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
