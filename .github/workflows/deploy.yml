@@ -1,42 +1,41 @@
-name: Deploy to Hostinger via FTP
+name: Deploy to FTP
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [ "main" ]
 
 jobs:
-  ftp-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: FTP Deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      # 可選：避免把敏感檔案帶上（即使 .gitignore 沒上版控，仍加一道保險）
+      - name: Remove sensitive files (safety)
+        run: |
+          rm -f .env
+          rm -f config/.env.php
+          rm -f config/db_connection.php
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_HOST }}
+          server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
           server-dir: ${{ secrets.FTP_TARGET_DIR }}
-
-          # 因為你的程式就在根目錄
-          local-dir: ./ 
-
-          protocol: ftps
-          port: 21
-          timeout: 60000
-
+          local-dir: ./
           exclude: |
             **/.git*
-            **/.github*
-            **/docs/**
-            **/README.md
-            **/LICENSE
-            **/.env
-            **/.env.*
-            **/.ftp-deploy-sync-state.json
-
-          dangerous-clean-slate: false
+            **/.git*/**
+            **/node_modules/**
+            **/vendor/**
+            **/Public/vendor/**
+            **/Public/TCPDF/examples/**
+            **/Public/TCPDF/fonts/**
+            **/.DS_Store
+            **/Thumbs.db
+            **/*.log
