@@ -1,0 +1,37 @@
+/* Header 共用樣式 */
+body { font-family: "Taipei Sans TC", "Microsoft JhengHei", sans-serif; }
+.navbar-brand img.brand-logo { width: 28px; height: 28px; margin-right: .5rem; }
+
+/* ===== Navbar：柔和主色、hover/active 不加粗、帶淡入淡出 ===== */
+.navbar .nav-link {
+  color: var(--bs-body-color);                  /* 平常字色 */
+  border-radius: .5rem;
+  transition: color .18s ease, background-color .18s ease;
+  font-weight: 400;                             /* 不加粗 */
+}
+
+/* 滑過：半透明主色底＋主色字（柔和） */
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+  background-color: rgba(var(--bs-primary-rgb), .08);
+  color: var(--bs-primary);
+}
+
+/* 目前頁籤（Active）：稍微更實一點，但仍柔和、不加粗 */
+.navbar .nav-link.active {
+  background-color: rgba(var(--bs-primary-rgb), .14);
+  color: var(--bs-primary);
+  font-weight: 400;                             /* 不加粗 */
+}
+
+/* 滑過 Active：淡出一些（透明度變小），看起來更柔和 */
+.navbar .nav-link.active:hover,
+.navbar .nav-link.active:focus {
+  background-color: rgba(var(--bs-primary-rgb), .10);
+  color: var(--bs-primary);
+}
+
+/* 手機以上再補一點品牌右側距離（雙保險） */
+@media (min-width: 992px) {
+  .navbar .navbar-brand { margin-right: 1.5rem; } /* 可再調 2rem/2.5rem 看喜好 */
+}

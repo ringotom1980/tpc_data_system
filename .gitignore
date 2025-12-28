@@ -1,0 +1,11 @@
+# 不要加入版本控制
+.env
+config/.env.php
+Public/vendor/
+vendor/
+node_modules/
+.DS_Store
+Thumbs.db
+# TCPDF 不進版控（避免 Norton / Git 卡死）
+Public/TCPDF/
+config/db_connection.php

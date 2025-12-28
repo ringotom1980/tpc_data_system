@@ -1,0 +1,186 @@
+/* ====== 變數 ====== */
+:root{
+  --bg1:#0a4da2;         /* 深藍 */
+  --bg2:#2ab1ff;         /* 亮藍 */
+  --card:#ffffff;
+  --text:#1b1f24;
+  --muted:#64748b;
+  --primary:#0a4da2;
+  --primary-hover:#073a7a;
+  --border:#e5e7eb;
+  --danger:#c1121f;
+  --shadow:0 10px 30px rgba(0,0,0,.15);
+}
+
+/* ====== 版面 ====== */
+html,body{
+  height:100%;
+}
+body{
+  margin:0;
+  font-family: "Taipei Sans TC", "Microsoft JhengHei", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: linear-gradient(135deg, var(--bg1), var(--bg2));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text);
+}
+
+/* 外層包一層，提高美觀與可擴充性 */
+.login-wrap{
+  width:100%;
+  max-width: 960px;
+  padding: 24px;
+  display:grid;
+  grid-template-rows: 1fr auto;
+  gap: 16px;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* 卡片 */
+.login-card{
+  margin: auto;
+  width:100%;
+  max-width: 460px;
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 36px 32px 28px;
+  text-align: center;
+  animation: fadeIn .6s ease-out both;
+  backdrop-filter: blur(3px);
+}
+
+/* 品牌區 */
+.brand{
+  margin-bottom: 22px;
+}
+.brand .logo{
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  object-fit: cover;
+  display:inline-block;
+  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+  border: 3px solid #ffffff;
+  background: #fff;
+  margin-bottom: 12px;
+}
+.brand h1{
+  margin:0;
+  font-size: 22px;
+  letter-spacing: .5px;
+}
+.subtitle{
+  margin:6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* 表單 */
+.login-form{
+  text-align: left;
+}
+.form-group{
+  margin-bottom: 16px;
+}
+label{
+  display:block;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color:#374151;
+}
+input[type="text"],
+input[type="password"]{
+  width:100%;
+  padding: 12px 14px;
+  border:1px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s, background-color .2s;
+  background: #fff;
+  box-sizing: border-box;
+}
+input::placeholder{
+  color:#9ca3af;
+}
+input:focus{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(10,77,162,.12);
+  background: #fff;
+}
+
+/* 按鈕 */
+.btn-primary,
+button{
+  width:100%;
+  padding: 12px 14px;
+  background: var(--primary);
+  color:#fff;
+  border:0;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor:pointer;
+  transition: background .15s, transform .05s ease-in-out;
+}
+.btn-primary:hover:not(:disabled){
+  background: var(--primary-hover);
+}
+.btn-primary:active{
+  transform: translateY(1px);
+}
+button:disabled{
+  background:#b7c3d6;
+  cursor:not-allowed;
+}
+
+/* 錯誤訊息 */
+.error{
+  margin-top: 12px;
+  color: var(--danger);
+  font-size: 14px;
+  min-height: 22px;
+}
+
+/* 底部 */
+.login-footer{
+  text-align:center;
+  color: #eef6ff;
+  font-size: 12px;
+  opacity: .95;
+}
+
+/* 輔助連結 */
+.helper{
+  margin-top: 14px;
+}
+.helper a{
+  color: var(--primary);
+  font-size: 13px;
+  text-decoration: none;
+}
+.helper a:hover{
+  text-decoration: underline;
+}
+
+/* 動畫 */
+@keyframes fadeIn{
+  from{ opacity:0; transform: translateY(-10px); }
+  to{ opacity:1; transform: translateY(0); }
+}
+
+/* ====== RWD ====== */
+@media (max-width: 520px){
+  .login-card{
+    padding: 28px 22px 22px;
+    border-radius: 16px;
+  }
+  .brand .logo{
+    width:84px; height:84px;
+  }
+  .brand h1{
+    font-size: 20px;
+  }
+}

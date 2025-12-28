@@ -1,0 +1,173 @@
+/* Public/assets/css/m_data_statistics.css
+ * 材料統計頁（獨立版，整檔覆蓋）
+ * - 概覽 chips
+ * - 滿版 + sticky thead
+ * - 淡格子線 + 斑馬條 + hover
+ * - 數字欄置中、等寬數字
+ * - 列印優化
+ * 僅作用於 [data-page="mat-statistics"] 容器內
+*/
+
+[data-page="mat-statistics"] {
+  /* 依你的固定導覽列高度需要可微調 */
+  --masthead-offset: 0px;
+
+  /* 視覺細節 */
+  --chip-radius: 9999px;
+  --chip-gap: .375rem;
+  --chip-px: .6rem;
+  --chip-py: .25rem;
+
+  --tile-radius: .75rem;
+  --tile-border: 1px solid rgba(0, 0, 0, .08);
+  --tile-bg: var(--bs-body-bg);
+  --tile-hover-bg: var(--bs-light);
+
+  --thead-bg: var(--bs-light);
+  --thead-shadow: 0 1px 0 rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
+
+  /* 表格格子與斑馬 */
+  --grid-h: rgba(0,0,0,.06);   /* 橫線 */
+  --grid-v: rgba(0,0,0,.05);   /* 直線 */
+  --zebra:  rgba(0,0,0,.015);  /* 斑馬底 */
+  --hover:  rgba(0,0,0,.03);   /* 列 hover */
+}
+
+/* ========== 概覽（近一個月提領）========== */
+
+#stats_overview_card .card-title { font-weight: 700; letter-spacing: .02em; }
+#stats_overview_card #stats_overview_range { font-variant-numeric: tabular-nums; }
+#stats_overview_grid { overscroll-behavior: contain; }
+
+/* 每日 tile */
+#stats_overview_grid .col > .border {
+  border-radius: var(--tile-radius) !important;
+  border: var(--tile-border) !important;
+  background: var(--tile-bg);
+  transition: background .2s ease, box-shadow .2s ease, transform .08s ease;
+}
+#stats_overview_grid .col > .border:hover {
+  background: var(--tile-hover-bg);
+  box-shadow: var(--bs-box-shadow-sm);
+}
+
+/* chips */
+#stats_overview_grid .chip {
+  border-radius: var(--chip-radius);
+  padding: var(--chip-py) var(--chip-px);
+  line-height: 1.1;
+  font-weight: 700;
+  border-color: var(--bs-primary);
+  background: transparent;
+  color: var(--bs-primary);
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease, transform .08s ease;
+  white-space: nowrap;
+}
+#stats_overview_grid .chip:hover { background: rgba(var(--bs-primary-rgb), .08); }
+#stats_overview_grid .chip:active { transform: translateY(1px); }
+#stats_overview_grid .chip.active,
+#stats_overview_grid .chip[aria-pressed="true"] {
+  background: var(--bs-primary);
+  color: #fff;
+  box-shadow: 0 0 0 .15rem rgba(var(--bs-primary-rgb), .25);
+  border-color: var(--bs-primary);
+}
+#stats_overview_grid .chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .35);
+}
+
+/* ========== 統計結果卡片 ========== */
+
+#stats_result_card .card-header { background: var(--bs-light); }
+#stats_result_title { font-weight: 800; letter-spacing: .02em; }
+#stats_result_sub, .text-mono, .small { font-variant-numeric: tabular-nums; }
+
+/* 表格容器 */
+#stats_result_card .table-responsive {
+  max-height: 70vh;
+  overscroll-behavior: contain;
+}
+
+/* sticky thead */
+#stats_result_card thead.sticky-top {
+  top: var(--masthead-offset);
+  z-index: 3;
+  background: var(--thead-bg);
+  box-shadow: var(--thead-shadow);
+}
+
+/* ========== 表格格子 & 斑馬 & 對齊 ========== */
+
+#stats_detail_table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* 橫線 */
+#stats_detail_table tbody td,
+#stats_detail_table tbody th {
+  border-top: 1px solid var(--grid-h);
+}
+
+/* 直線（最後一欄不畫） */
+#stats_detail_table thead th:not(:last-child),
+#stats_detail_table tbody td:not(:last-child),
+#stats_detail_table tfoot th:not(:last-child),
+#stats_detail_table tfoot td:not(:last-child) {
+  border-right: 1px solid var(--grid-v);
+}
+
+/* 斑馬條紋 + 列 hover */
+#stats_detail_table tbody tr:nth-child(odd) { background: var(--zebra); }
+#stats_detail_table tbody tr:hover { background: var(--hover); }
+
+/* 置中數字欄（第4欄以後皆為數字），材料名稱允許換行 */
+#stats_detail_table td:nth-child(3) { white-space: normal; } /* 材料名稱 */
+#stats_detail_table td:nth-child(n+4),
+#stats_detail_table th:nth-child(n+4) { text-align: center; }
+
+#stats_detail_table td, #stats_detail_table th {
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+#stats_detail_table th { font-weight: 700; }
+
+/* 合計(舊)正數固定正文色（黑） */
+[data-page="mat-statistics"] .sum-old.text-body { color: var(--bs-body-color) !important; }
+
+/* 卡片圓角與內距微調 */
+[data-page="mat-statistics"] .card { border-radius: 1rem; }
+[data-page="mat-statistics"] .card-body { padding: 1rem; }
+[data-page="mat-statistics"] .card-header,
+[data-page="mat-statistics"] .card-footer { padding-left: 1rem; padding-right: 1rem; }
+
+/* 讓列印鈕一定是「手指」；disabled 時是禁止 */
+/* [data-page="mat-statistics"] #btnPrintPdf { 
+  cursor: pointer !important;
+}
+[data-page="mat-statistics"] #btnPrintPdf[disabled],
+[data-page="mat-statistics"] #btnPrintPdf.disabled {
+  cursor: not-allowed !important;
+  pointer-events: none;
+  opacity: .6;
+} */
+
+
+/* ========== 響應式 ========== */
+@media (max-width: 992px) {
+  #stats_result_card .table-responsive { max-height: 58vh; }
+}
+@media (max-width: 576px) {
+  #stats_detail_table { font-size: .9rem; }
+  #stats_overview_grid .col > .border { padding: .5rem; }
+  #stats_overview_grid .chip { padding: .25rem .5rem; }
+}
+
+/* ========== 列印（僅瀏覽器列印；TCPDF 不吃這段） ========== */
+@media print {
+  #stats_overview_card, #btnRefresh, #btnPrintPdf { display: none !important; }
+  #stats_result_card .table-responsive { max-height: none !important; overflow: visible !important; }
+  #stats_result_card thead.sticky-top { position: static !important; box-shadow: none !important; }
+}

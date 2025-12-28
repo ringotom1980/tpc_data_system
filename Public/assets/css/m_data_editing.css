@@ -1,0 +1,86 @@
+/* 基本標題強度 */
+.card-title { font-weight: 600; }
+
+/* 右欄：材料排序清單 */
+.sortable-list {
+  min-height: 220px;
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px dashed #e5e7eb;
+  border-radius: 1rem;
+  padding: .75rem;
+  background: #fafafa;
+}
+.sortable-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: .75rem;
+  background: #fff;
+  margin-bottom: .5rem;
+}
+.drag-handle { cursor: grab; user-select: none; opacity: .7; padding: 0 .25rem; }
+.drag-handle:active { cursor: grabbing; }
+.sortable-ghost { opacity: .5; }
+
+.empty-state { border: 1px dashed #e5e7eb; border-radius: 1rem; }
+
+/*材料清單排序效果*/
+#materialsSortTable tbody tr.dragging {
+  opacity: 0.6;
+  outline: 2px dashed var(--bs-primary);
+}
+#materialsSortTable td { vertical-align: middle; }
+#materialsSortTable .btn-up,
+#materialsSortTable .btn-down { padding: .05rem .4rem; line-height: 1; }
+#materialsSortTable tbody tr.dragging {
+  opacity: 0.6;
+  outline: 2px dashed var(--bs-primary);
+}
+
+/* 左欄所有卡片標題調整為 h5 尺寸與間距 */
+.col-12.col-lg-4 .card-title {
+  font-size: 1.25rem;   /* 等同 Bootstrap h5 */
+  line-height: 1.2;
+  margin-bottom: .5rem; /* 與右欄一致的緊湊感 */
+}
+
+/* 近月提領：日期卡片 */
+.withdraw-day {
+  border: 1px solid #e5e7eb; /* tailwind gray-200 風 */
+  border-radius: .75rem;
+  padding: .5rem .75rem;
+  background: #fff;
+  height: 100%;
+}
+.withdraw-day .day-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: .25rem;
+}
+.withdraw-day .date-pill {
+  display: inline-flex; align-items: center; gap: .25rem;
+  padding: .125rem .5rem; border-radius: 999px;
+  background: var(--bs-primary); color: #fff; font-weight: 600; font-size: .9rem;
+}
+.withdraw-day .weekday {
+  color: #6b7280; /* gray-500 */
+  font-size: .8rem; margin-left: .25rem;
+}
+.withdraw-day .chips { display: flex; flex-wrap: wrap; gap: .375rem; }
+.withdraw-day .chip {
+  border: 1px solid #e5e7eb; border-radius: 999px; padding: .15rem .5rem;
+  background: #f9fafb; font-size: .85rem; display: inline-flex; align-items: center; gap: .35rem;
+}
+.withdraw-day .chip .cnt {
+  border: 1px solid #e5e7eb; background: #fff; border-radius: 999px;
+  font-size: .75rem; padding: 0 .35rem;
+}
+
+
+/* RWD */
+@media (max-width: 576px) {
+  /* 手機時上下排列即可，無其他特別需求 */
+}
