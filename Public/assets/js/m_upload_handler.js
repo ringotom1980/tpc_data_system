@@ -17,7 +17,7 @@
   const $autoStatus = document.getElementById('auto_upload_status');
   const LOCAL_TOOL = 'http://127.0.0.1:17888';
   const LOCAL_TOKEN_KEY = 'tpc_auto_uploader_token';
-  const INSTALLER_URL = `${BASE}/tools/download_auto_uploader.php?file=installer`;
+  const INSTALLER_URL = `${BASE}/tools/TPCAutoUploaderSetup.exe`;
 
   if (!$btn && !$autoBtn) return;
 
@@ -295,6 +295,15 @@
     $autoStatus.textContent = text;
   }
 
+  function downloadInstaller() {
+    const link = document.createElement('a');
+    link.href = INSTALLER_URL;
+    link.download = 'TPCAutoUploaderSetup.exe';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
   async function detectLocalTool(showDialog = false) {
     if (!$autoBtn && !$autoManageBtn) return false;
     try {
@@ -323,7 +332,7 @@
           reverseButtons: true,
         });
         if (ans.isConfirmed) {
-          window.location.href = INSTALLER_URL;
+          downloadInstaller();
         }
       }
       return false;
