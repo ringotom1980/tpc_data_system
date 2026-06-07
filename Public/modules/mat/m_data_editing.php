@@ -27,41 +27,28 @@ include __DIR__ . '/../../partials/header.php';
     <!-- 左欄（1/3）：上傳檔案、承攬商選擇/編輯、提領日期 -->
     <div class="col-12 col-lg-4">
 
-      <!-- 上傳檔案 -->
+      <!-- 上傳資料 -->
       <section class="card mb-3">
         <div class="card-body">
-          <h6 class="card-title mb-3">上傳檔案</h6>
+          <h6 class="card-title mb-3">上傳資料</h6>
           <div class="vstack gap-2">
+            <label class="form-label form-label-sm mb-0" for="withdraw_date">提領日期</label>
+            <input type="date" id="withdraw_date" class="form-control">
+
+            <div class="d-flex align-items-center justify-content-between mt-2">
+              <label class="form-label form-label-sm mb-0" for="contractor_select">承攬商</label>
+              <button id="edit_contractor_btn" class="btn btn-sm btn-outline-secondary" type="button">編輯承攬商</button>
+            </div>
+            <select id="contractor_select" class="form-select">
+              <option value=""></option>
+              <!-- 後續由你載入清單 -->
+            </select>
+
+            <label class="form-label form-label-sm mb-0 mt-2" for="upload_files_input">選擇檔案</label>
             <input type="file" id="upload_files_input" class="form-control" multiple>
             <button id="upload_files_btn" class="btn btn-primary" type="button">上傳</button>
-            <p class="text-muted small mb-0">先選擇提領日期及承攬商再上傳；支援多檔上傳。</p>
+            <p class="text-muted small mb-0">支援多檔上傳；請依序選擇提領日期、承攬商與檔案。</p>
           </div>
-        </div>
-      </section>
-
-      <!-- 承攬商選擇（右側有「編輯承攬商」） -->
-      <section class="card mb-3">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h6 class="card-title mb-0">承攬商</h6>
-            <button id="edit_contractor_btn" class="btn btn-sm btn-outline-secondary" type="button">編輯承攬商</button>
-          </div>
-          <select id="contractor_select" class="form-select">
-            <option value=""></option>
-            <!-- 後續由你載入清單 -->
-          </select>
-          <p class="text-muted small mb-0 mt-2">若承攬商未在選單內，請先編輯承攬商。</p>
-        </div>
-      </section>
-
-      <!-- 提領日期 -->
-      <section class="card mb-3">
-        <div class="card-body">
-          <h6 class="card-title mb-3">提領日期</h6>
-          <div class="d-flex flex-wrap gap-2 align-items-center">
-            <input type="date" id="withdraw_date" class="form-control">
-          </div>
-          <!-- <p class="text-muted small mb-0 mt-2">此日期將作為上傳與排序的參照條件。</p> -->
         </div>
       </section>
 
@@ -93,11 +80,10 @@ include __DIR__ . '/../../partials/header.php';
         <div class="d-flex gap-2 align-items-center">
           <!-- 即時搜尋：小尺寸，高度正常 -->
           <input id="matSearch" class="form-control form-control-sm" placeholder="搜尋材料編號/名稱" style="height:auto;">
-          <!-- 一鍵儲存 -->
-          <button id="btnSaveOrder" class="btn btn-sm btn-primary" type="button">儲存排序</button>
           <button id="btnToggleEdit" class="btn btn-outline-secondary btn-sm ms-2">編輯</button>
         </div>
       </div>
+      <div id="sortAutoSaveStatus" class="text-muted small mb-2">拖曳材料列後會自動儲存排序。</div>
 
       <div class="table-responsive" style="max-height:70vh;overflow:auto;">
         <table id="materialsSortTable" class="table table-sm table-hover table-bordered align-middle">
@@ -116,7 +102,7 @@ include __DIR__ . '/../../partials/header.php';
         </table>
       </div>
 
-      <small class="text-muted d-block mt-1">提示：用滑鼠拖曳整列改變順序，完成後按「儲存排序」。</small>
+      <small class="text-muted d-block mt-1">提示：用滑鼠拖曳整列改變順序，放開後會自動儲存。搜尋中僅供查看，清除搜尋後可調整排序。</small>
     </div>
 
 

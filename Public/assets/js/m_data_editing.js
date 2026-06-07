@@ -1,4 +1,4 @@
-/* Public/assets/js/m_data_editing.js */
+﻿/* Public/assets/js/m_data_editing.js */
 /* 材料排序：拖曳 + 即時搜尋（前端），SweetAlert2 提示，無微調、無位置欄位 */
 
 (function () {
@@ -12,10 +12,12 @@
   if (!table) return;
   const tbody = table.tBodies[0];
   const inputQ = document.getElementById('matSearch');
-  const btnSave = document.getElementById('btnSaveOrder');
+  const sortStatus = document.getElementById('sortAutoSaveStatus');
 
   let allItems = []; // 全集
   let viewItems = []; // 當前顯示（搜尋後）
+  let savingOrder = false;
+  let dragStartOrder = '';
 
   const h = (s) =>
     String(s ?? '').replace(
@@ -31,13 +33,31 @@
     );
 
   function rowTpl(item, idx) {
+    const draggable = canDragSort() ? 'true' : 'false';
     return `
-      <tr draggable="true" data-mat="${h(item.material_number)}">
+      <tr draggable="${draggable}" data-mat="${h(item.material_number)}">
         <td class="text-center seq">${idx + 1}</td>
         <td class="text-center">${h(item.material_number)}</td>
         <td>${h(item.name_specification)}</td>
       </tr>
     `;
+  }
+
+  function canDragSort() {
+    return !(inputQ && inputQ.value.trim());
+  }
+
+  function currentOrder() {
+    return [...tbody.querySelectorAll('tr')]
+      .map((tr) => tr.getAttribute('data-mat'))
+      .filter(Boolean)
+      .join('|');
+  }
+
+  function setSortStatus(text, tone = 'muted') {
+    if (!sortStatus) return;
+    sortStatus.className = `small mb-2 text-${tone}`;
+    sortStatus.textContent = text;
   }
 
   function render(list) {
@@ -62,18 +82,28 @@
 
     tbody.querySelectorAll('tr').forEach((tr) => {
       tr.addEventListener('dragstart', (e) => {
+        if (!canDragSort() || savingOrder) {
+          e.preventDefault();
+          return;
+        }
         dragging = tr;
+        dragStartOrder = currentOrder();
         tr.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
       });
 
-      tr.addEventListener('dragend', () => {
+      tr.addEventListener('dragend', async () => {
         dragging?.classList.remove('dragging');
         dragging = null;
         renumber();
+        if (dragStartOrder && dragStartOrder !== currentOrder()) {
+          await saveOrder({ quiet: true });
+        }
+        dragStartOrder = '';
       });
 
       tr.addEventListener('dragover', (e) => {
+        if (!canDragSort() || savingOrder) return;
         e.preventDefault();
         const target = e.currentTarget;
         if (!dragging || dragging === target) return;
@@ -245,8 +275,31 @@
     }
 
     async function deleteBase(base) {
-      // 不 confirm、不提示；失敗只 console
+      const confirmed = await Swal.fire({
+        icon: 'warning',
+        title: '確認刪除單號？',
+        html: `
+          <div class="text-start">
+            <div>日期：<b>${escHtml(currentDetail.date)}</b></div>
+            <div>承攬商：<b>${escHtml(currentDetail.contractor)}</b></div>
+            <div>單號：<b>${escHtml(base)}</b></div>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '刪除',
+        cancelButtonText: '取消',
+        confirmButtonColor: '#d33',
+        reverseButtons: true,
+      });
+      if (!confirmed.isConfirmed) return;
+
       try {
+        Swal.fire({
+          title: '刪除中…',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          didOpen: () => Swal.showLoading(),
+        });
         const res = await fetch(`${API}?action=withdraw_overview_delete`, {
           method: 'POST',
           credentials: 'same-origin',
@@ -277,6 +330,7 @@
         });
       } catch (err) {
         console.error(err);
+        Swal.fire({ icon: 'error', title: '刪除失敗', text: err?.message || '' });
       }
     }
 
@@ -331,6 +385,7 @@
     if (!q) {
       viewItems = allItems.slice();
       render(viewItems);
+      setSortStatus('拖曳材料列後會自動儲存排序。', 'muted');
       return;
     }
     viewItems = allItems.filter((it) => {
@@ -339,26 +394,36 @@
       return no.includes(q) || nm.includes(q);
     });
     render(viewItems);
+    setSortStatus('搜尋中僅供查看；清除搜尋後可拖曳調整排序。', 'warning');
   }
 
-  // 只貼需要改的 saveOrder；其餘維持你現有版本
-  async function saveOrder() {
+  async function saveOrder(options = {}) {
+    const quiet = !!options.quiet;
+    if (!canDragSort()) {
+      setSortStatus('搜尋中僅供查看；清除搜尋後可拖曳調整排序。', 'warning');
+      return;
+    }
+    if (savingOrder) return;
+
     const items = [...tbody.querySelectorAll('tr')]
       .map((tr) => tr.getAttribute('data-mat'))
       .filter(Boolean);
 
     if (items.length === 0) {
-      Swal.fire({ icon: 'info', title: '沒有可儲存的項目' });
+      if (!quiet) Swal.fire({ icon: 'info', title: '沒有可儲存的項目' });
       return;
     }
 
-    // 先開一個「loading」彈窗
-    Swal.fire({
-      title: '儲存中…',
-      allowOutsideClick: false,
-      showConfirmButton: false,
-      didOpen: () => Swal.showLoading(),
-    });
+    savingOrder = true;
+    setSortStatus('排序儲存中…', 'primary');
+    if (!quiet) {
+      Swal.fire({
+        title: '儲存中…',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => Swal.showLoading(),
+      });
+    }
 
     try {
       const url = `${API}?action=save_order`;
@@ -370,39 +435,40 @@
       });
       const data = await res.json();
       if (!data?.success) throw new Error(data?.message || '儲存失敗');
-      // ✅ 通知概覽刷新
-      document.dispatchEvent(new CustomEvent('mat:uploaded'));
-      await fetchAll();
+      await fetchAll({ preserveStatus: true });
+      setSortStatus(`排序已自動儲存（${data.count ?? items.length} 筆）`, 'success');
 
-      // 同一個視窗改成成功狀態（不要再開新的 Swal.fire）
-      // 成功
-      Swal.hideLoading();
-      Swal.stopTimer?.(); // 若之前有設 timer，先停掉
-      Swal.update({
-        icon: 'success',
-        title: '已儲存',
-        text: '',
-        showConfirmButton: true,
-        confirmButtonText: '關閉',
-        showCloseButton: true, // 右上角「X」
-        allowOutsideClick: true, // 點外面可關
-        allowEscapeKey: true, // ESC 可關
-        // 不要再設 timer，改成手動關
-      });
+      if (!quiet) {
+        Swal.hideLoading();
+        Swal.update({
+          icon: 'success',
+          title: '已儲存',
+          showConfirmButton: true,
+          confirmButtonText: '關閉',
+          showCloseButton: true,
+          allowOutsideClick: true,
+          allowEscapeKey: true,
+        });
+      }
     } catch (err) {
-      // 失敗
-      Swal.hideLoading();
-      Swal.stopTimer?.();
-      Swal.update({
-        icon: 'error',
-        title: '儲存失敗',
-        text: err?.message || '',
-        showConfirmButton: true,
-        confirmButtonText: '關閉',
-        showCloseButton: true,
-        allowOutsideClick: true,
-        allowEscapeKey: true,
-      });
+      setSortStatus(`自動儲存失敗：${err?.message || '請稍後再試'}`, 'danger');
+      if (!quiet) {
+        Swal.hideLoading();
+        Swal.update({
+          icon: 'error',
+          title: '儲存失敗',
+          text: err?.message || '',
+          showConfirmButton: true,
+          confirmButtonText: '關閉',
+          showCloseButton: true,
+          allowOutsideClick: true,
+          allowEscapeKey: true,
+        });
+      } else {
+        Swal.fire({ icon: 'error', title: '排序自動儲存失敗', text: err?.message || '' });
+      }
+    } finally {
+      savingOrder = false;
     }
   }
 
@@ -414,143 +480,6 @@
       t = setTimeout(() => applyFilter(inputQ.value), 120);
     });
   }
-  if (btnSave) btnSave.addEventListener('click', saveOrder);
-
-  /* ===== 承攬商：動態下拉 + 編輯彈窗 ===== */
-  (function () {
-    const sel = document.getElementById('contractor_select');
-    const btn = document.getElementById('edit_contractor_btn');
-    if (!sel && !btn) return;
-
-    async function loadContractorSelect() {
-      try {
-        const res = await fetch(`${API}?action=contractors_list`, {
-          credentials: 'same-origin',
-        });
-        const data = await res.json();
-        if (!data?.success) throw new Error(data?.message || '載入失敗');
-
-        // 保留第一個「全部承攬商」
-        const keepFirst = sel && sel.options.length ? sel.options[0] : null;
-        if (sel) sel.innerHTML = '';
-        if (sel && keepFirst) sel.appendChild(keepFirst);
-
-        (data.items || []).forEach((c) => {
-          const opt = document.createElement('option');
-          const code = (c.contractor_code || '').trim();
-          const name = (c.contractor_name || '').trim();
-          opt.value = c.contractor_id;
-          // ★ 加上 data-code，供上傳模組穩定讀取代碼
-          opt.dataset.code = code;
-          opt.textContent = (code ? `${code}-` : '') + name; // 例如：T16班-境宏工程有限公司
-          sel?.appendChild(opt);
-        });
-      } catch (err) {
-        Swal.fire({ icon: 'error', title: '承攬商清單載入失敗', text: err?.message || '' });
-      }
-    }
-
-    async function openContractorEditor() {
-      const tbody = document.querySelector('#contractorTable tbody');
-      if (tbody)
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">載入中…</td></tr>`;
-
-      try {
-        const res = await fetch(`${API}?action=contractors_get_all`, {
-          credentials: 'same-origin',
-        });
-        const data = await res.json();
-        if (!data?.success) throw new Error(data?.message || '載入失敗');
-
-        const rows = (data.items || [])
-          .map(
-            (c, i) => `
-        <tr data-id="${c.contractor_id}">
-          <td class="text-center">${i + 1}</td>
-          <td><input class="form-control form-control-sm code" value="${h(c.contractor_code || '')}" placeholder="例：T16班"></td>
-          <td><input class="form-control form-control-sm name" value="${h(c.contractor_name || '')}" required></td>
-          <td class="text-center">
-            <input class="form-check-input active" type="checkbox" ${c.is_active ? 'checked' : ''}>
-          </td>
-        </tr>
-      `,
-          )
-          .join('');
-        if (tbody)
-          tbody.innerHTML =
-            rows || `<tr><td colspan="4" class="text-center text-muted">無資料</td></tr>`;
-      } catch (err) {
-        if (tbody)
-          tbody.innerHTML = `<tr><td colspan="4" class="text-danger text-center">載入失敗</td></tr>`;
-        Swal.fire({ icon: 'error', title: '載入失敗', text: err?.message || '' });
-      }
-
-      const modalEl = document.getElementById('contractorModal');
-      if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
-
-      const saveBtn = document.getElementById('saveContractorsBtn');
-      if (saveBtn) {
-        saveBtn.onclick = saveContractors; // 每次開啟時掛一次最新的
-      }
-    }
-
-    async function saveContractors() {
-      const rows = Array.from(document.querySelectorAll('#contractorTable tbody tr'));
-      const items = rows.map((tr) => ({
-        contractor_id: parseInt(tr.getAttribute('data-id'), 10) || 0,
-        contractor_code: tr.querySelector('.code')?.value.trim() || null,
-        contractor_name: tr.querySelector('.name')?.value.trim() || '',
-        is_active: tr.querySelector('.active')?.checked ? 1 : 0,
-      }));
-
-      if (items.some((x) => !x.contractor_name)) {
-        Swal.fire({ icon: 'warning', title: '有「承攬商名稱」未填' });
-        return;
-      }
-
-      Swal.fire({
-        title: '儲存中…',
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        didOpen: () => Swal.showLoading(),
-      });
-      try {
-        const res = await fetch(`${API}?action=contractors_save`, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items }),
-        });
-        const data = await res.json();
-        if (!data?.success) throw new Error(data?.message || '儲存失敗');
-
-        await loadContractorSelect(); // 更新下拉
-        Swal.hideLoading();
-        Swal.update({
-          icon: 'success',
-          title: '已儲存',
-          showConfirmButton: true,
-          confirmButtonText: '關閉',
-          showCloseButton: true,
-          allowOutsideClick: true,
-        });
-      } catch (err) {
-        Swal.hideLoading();
-        Swal.update({
-          icon: 'error',
-          title: '儲存失敗',
-          text: err?.message || '',
-          showConfirmButton: true,
-          showCloseButton: true,
-          allowOutsideClick: true,
-        });
-      }
-    }
-
-    // 初始化
-    loadContractorSelect();
-    btn?.addEventListener('click', openContractorEditor);
-  })();
 
   /* ===== 承攬商：新增／排序／儲存後關閉 ===== */
   (function () {
@@ -767,14 +696,15 @@
   // 生成每列 HTML（覆寫你的 rowTpl，保留原 3 欄，編輯模式多一個刪除鈕欄位）
   const _origRowTpl = rowTpl; // 若前面定義過 rowTpl，先引用
   rowTpl = function (item, idx) {
+    const draggable = canDragSort() ? 'true' : 'false';
     const base = `
-    <tr draggable="true" data-mat="${(item.material_number ?? '').toString().replace(/["'&<>]/g, (s) => ({ '"': '&#39;', '"': '&quot;', '&': '&amp;', '<': '&lt;', '>': '&gt;' })[s])}">
+    <tr draggable="${draggable}" data-mat="${h(item.material_number)}">
       <td class="text-center seq">${idx + 1}</td>
-      <td class="text-center">${item.material_number ?? ''}</td>
-      <td>${item.name_specification ?? ''}</td>
+      <td class="text-center">${h(item.material_number ?? '')}</td>
+      <td>${h(item.name_specification ?? '')}</td>
       ${editMode
         ? `<td class="text-center">
-          <button type="button" class="btn btn-sm btn-outline-danger btn-del" data-mat="${item.material_number ?? ''}">
+          <button type="button" class="btn btn-sm btn-outline-danger btn-del" data-mat="${h(item.material_number ?? '')}">
             刪除
           </button>
         </td>`
@@ -887,10 +817,13 @@
 
   // 讓 fetchAll() 在載入空畫面時也有正確 colspan
   const _origFetchAll = fetchAll;
-  fetchAll = async function () {
+  fetchAll = async function (options = {}) {
     const colspan = 3 + (editMode ? 1 : 0);
     tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center text-muted">載入中…</td></tr>`;
     await _origFetchAll();
+    if (!options.preserveStatus && canDragSort()) {
+      setSortStatus('拖曳材料列後會自動儲存排序。', 'muted');
+    }
   };
 
   // ★ 監聽上傳完成事件：刷新材料排序清單（並保留搜尋框的關鍵字）
@@ -905,3 +838,4 @@
   // 初次載入
   fetchAll();
 })();
+

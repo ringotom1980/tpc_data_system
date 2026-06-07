@@ -34,6 +34,19 @@
     return (txt.split('-')[0] || '').trim();
   }
 
+  function updateUploadReady() {
+    if (!$btn) return;
+    const hasDate = !!($date?.value || '').trim();
+    const hasCode = !!getContractorCode();
+    const hasFiles = !!($file?.files || []).length;
+    $btn.disabled = !(hasDate && hasCode && hasFiles);
+  }
+
+  $date?.addEventListener('change', updateUploadReady);
+  $contractor?.addEventListener('change', updateUploadReady);
+  $file?.addEventListener('change', updateUploadReady);
+  updateUploadReady();
+
   function ensureUnknownModal() {
     if (document.getElementById('unknownModal')) return;
     document.body.insertAdjacentHTML(
@@ -250,6 +263,7 @@
         showConfirmButton: true,
       });
       if ($file) $file.value = '';
+      updateUploadReady();
     } catch (err) {
       Swal.update({
         icon: 'error',
@@ -257,6 +271,7 @@
         text: err?.message || '發生錯誤',
         showConfirmButton: true,
       });
+      updateUploadReady();
     }
   });
 })();

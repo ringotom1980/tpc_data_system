@@ -30,20 +30,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $stmt->execute([':u' => $username]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // === 將原本合併的 401 拆開，便於定位 ===
     if (!$row) {
       http_response_code(401);
-      echo json_encode(['success' => false, 'message' => '使用者不存在']);
+      echo json_encode(['success' => false, 'message' => '帳號或密碼錯誤']);
       exit;
     }
     if (!$row['is_active']) {
       http_response_code(401);
-      echo json_encode(['success' => false, 'message' => '帳號未啟用']);
+      echo json_encode(['success' => false, 'message' => '帳號或密碼錯誤']);
       exit;
     }
     if (!password_verify($password, (string)$row['password_hash'])) {
       http_response_code(401);
-      echo json_encode(['success' => false, 'message' => '密碼錯誤']);
+      echo json_encode(['success' => false, 'message' => '帳號或密碼錯誤']);
       exit;
     }
 

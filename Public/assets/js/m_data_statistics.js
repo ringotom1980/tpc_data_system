@@ -233,8 +233,15 @@
   btnPdf?.addEventListener('click', (e) => {
     e.preventDefault();
     if (!current.code || !current.date) return;
+    const originalText = btnPdf.textContent;
+    btnPdf.disabled = true;
+    btnPdf.textContent = '產生中…';
     const url = `${BASE}/modules/mat/m_data_statistics_pdf.php?contractor_code=${encodeURIComponent(current.code)}&withdraw_date=${encodeURIComponent(current.date)}`;
     window.open(url, '_blank');
+    window.setTimeout(() => {
+      btnPdf.disabled = false;
+      btnPdf.textContent = originalText || '列印 PDF';
+    }, 1500);
   });
 
   // init
