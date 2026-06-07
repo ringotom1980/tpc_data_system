@@ -45,7 +45,6 @@
     const hasCode = !!getContractorCode();
     const hasFiles = !!($file?.files || []).length;
     if ($btn) $btn.disabled = !(hasDate && hasCode && hasFiles);
-    if ($autoBtn) $autoBtn.disabled = !(hasDate && hasCode);
   }
 
   $date?.addEventListener('change', updateUploadReady);
