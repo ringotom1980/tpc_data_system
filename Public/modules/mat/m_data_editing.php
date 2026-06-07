@@ -51,6 +51,8 @@ include __DIR__ . '/../../partials/header.php';
               <button id="auto_upload_btn" class="btn btn-success" type="button">自動上傳</button>
             </div>
             <div class="d-flex flex-wrap gap-2 align-items-center">
+              <a id="auto_upload_download_btn" class="btn btn-outline-success btn-sm" href="<?= public_base() ?>/tools/download_auto_uploader.php?file=script">下載本機工具</a>
+              <a class="btn btn-outline-success btn-sm" href="<?= public_base() ?>/tools/download_auto_uploader.php?file=runner">下載啟動檔</a>
               <button id="auto_upload_manage_btn" class="btn btn-outline-secondary btn-sm" type="button">管理自動上傳設定</button>
               <button id="auto_upload_detect_btn" class="btn btn-outline-primary btn-sm" type="button">重新偵測本機工具</button>
             </div>

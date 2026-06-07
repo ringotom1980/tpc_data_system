@@ -316,7 +316,7 @@
         Swal.fire({
           icon: 'info',
           title: '尚未安裝本機工具',
-          text: '請先在這台電腦安裝 TPC Auto Uploader，安裝完成後按「重新偵測本機工具」。',
+          html: '請先下載「本機工具」與「啟動檔」，放在同一個資料夾後執行啟動檔。<br>啟動完成後按「重新偵測本機工具」。',
           confirmButtonText: '知道了',
         });
       }

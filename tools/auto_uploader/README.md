@@ -4,6 +4,15 @@
 
 ## 執行
 
+從網站下載時，請下載：
+
+- `tpc_auto_uploader.py`
+- `run_tpc_auto_uploader.cmd`
+
+把兩個檔案放在同一個資料夾，雙擊 `run_tpc_auto_uploader.cmd`。
+
+從專案資料夾直接執行時：
+
 ```powershell
 python tools\auto_uploader\tpc_auto_uploader.py
 ```
