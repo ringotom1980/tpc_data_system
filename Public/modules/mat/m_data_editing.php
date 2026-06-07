@@ -44,10 +44,34 @@ include __DIR__ . '/../../partials/header.php';
               <!-- 後續由你載入清單 -->
             </select>
 
-            <label class="form-label form-label-sm mb-0 mt-2" for="upload_files_input">選擇檔案</label>
-            <input type="file" id="upload_files_input" class="form-control" multiple>
-            <button id="upload_files_btn" class="btn btn-primary" type="button">上傳</button>
-            <p class="text-muted small mb-0">支援多檔上傳；請依序選擇提領日期、承攬商與檔案。</p>
+            <ul class="nav nav-pills nav-fill gap-2 mt-3 upload-mode-tabs" id="uploadModeTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="manual-upload-tab" data-bs-toggle="pill" data-bs-target="#manual-upload-pane" type="button" role="tab" aria-controls="manual-upload-pane" aria-selected="true">手動上傳</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="auto-upload-tab" data-bs-toggle="pill" data-bs-target="#auto-upload-pane" type="button" role="tab" aria-controls="auto-upload-pane" aria-selected="false">自動上傳</button>
+              </li>
+            </ul>
+
+            <div class="tab-content pt-2" id="uploadModeContent">
+              <div class="tab-pane fade show active" id="manual-upload-pane" role="tabpanel" aria-labelledby="manual-upload-tab" tabindex="0">
+                <div class="vstack gap-2">
+                  <label class="form-label form-label-sm mb-0" for="upload_files_input">選擇檔案</label>
+                  <input type="file" id="upload_files_input" class="form-control" multiple>
+                  <button id="upload_files_btn" class="btn btn-primary" type="button">上傳</button>
+                  <p class="text-muted small mb-0">支援多檔上傳；若自動上傳不可用，可使用此方式。</p>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="auto-upload-pane" role="tabpanel" aria-labelledby="auto-upload-tab" tabindex="0">
+                <div class="vstack gap-2">
+                  <button id="auto_upload_btn" class="btn btn-success" type="button">自動下載並上傳</button>
+                  <button id="auto_upload_manage_btn" class="btn btn-outline-secondary" type="button">管理自動上傳設定</button>
+                  <button id="auto_upload_detect_btn" class="btn btn-outline-primary btn-sm" type="button">重新偵測本機工具</button>
+                  <div id="auto_upload_status" class="small text-muted">尚未偵測本機工具。</div>
+                  <p class="text-muted small mb-0">需先在這台電腦安裝本機工具，帳密與下載網址會儲存在本機工具內。</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

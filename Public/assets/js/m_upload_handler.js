@@ -12,8 +12,14 @@
     document.getElementById('upload_files_btn') || document.getElementById('btnUpload');
   const $contractor = document.getElementById('contractor_select');
   const $date = document.getElementById('withdraw_date');
+  const $autoBtn = document.getElementById('auto_upload_btn');
+  const $autoManageBtn = document.getElementById('auto_upload_manage_btn');
+  const $autoDetectBtn = document.getElementById('auto_upload_detect_btn');
+  const $autoStatus = document.getElementById('auto_upload_status');
+  const LOCAL_TOOL = 'http://127.0.0.1:17888';
+  const LOCAL_TOKEN_KEY = 'tpc_auto_uploader_token';
 
-  if (!$btn) return;
+  if (!$btn && !$autoBtn) return;
 
   function esc(s) {
     return String(s ?? '')
@@ -35,11 +41,11 @@
   }
 
   function updateUploadReady() {
-    if (!$btn) return;
     const hasDate = !!($date?.value || '').trim();
     const hasCode = !!getContractorCode();
     const hasFiles = !!($file?.files || []).length;
-    $btn.disabled = !(hasDate && hasCode && hasFiles);
+    if ($btn) $btn.disabled = !(hasDate && hasCode && hasFiles);
+    if ($autoBtn) $autoBtn.disabled = !(hasDate && hasCode);
   }
 
   $date?.addEventListener('change', updateUploadReady);
@@ -177,30 +183,7 @@
     return data; // { added_to_master, inserted_rows }
   }
 
-  $btn.addEventListener('click', async (e) => {
-    e.preventDefault();
-
-    const files = Array.from($file?.files || []);
-    const code = getContractorCode();
-    const date = ($date?.value || '').trim();
-
-    if (!files.length) {
-      Swal.fire({ icon: 'warning', title: '請先選擇檔案' });
-      return;
-    }
-    if (!code && !date) {
-      Swal.fire({ icon: 'warning', title: '請先選擇承攬商及提領日期' });
-      return;
-    }
-    if (!code) {
-      Swal.fire({ icon: 'warning', title: '請先選擇承攬商' });
-      return;
-    }
-    if (!date) {
-      Swal.fire({ icon: 'warning', title: '請先選擇提領日期' });
-      return;
-    }
-
+  async function importFiles(files, code, date) {
     Swal.fire({
       title: '分析中…',
       html: `0 / ${files.length}`,
@@ -273,5 +256,164 @@
       });
       updateUploadReady();
     }
+  }
+
+  function validateBaseSelection() {
+    const code = getContractorCode();
+    const date = ($date?.value || '').trim();
+    if (!code && !date) {
+      Swal.fire({ icon: 'warning', title: '請先選擇承攬商及提領日期' });
+      return null;
+    }
+    if (!code) {
+      Swal.fire({ icon: 'warning', title: '請先選擇承攬商' });
+      return null;
+    }
+    if (!date) {
+      Swal.fire({ icon: 'warning', title: '請先選擇提領日期' });
+      return null;
+    }
+    return { code, date };
+  }
+
+  $btn?.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    const files = Array.from($file?.files || []);
+    if (!files.length) {
+      Swal.fire({ icon: 'warning', title: '請先選擇檔案' });
+      return;
+    }
+
+    const picked = validateBaseSelection();
+    if (!picked) return;
+    await importFiles(files, picked.code, picked.date);
   });
+
+  function setAutoStatus(text, tone = 'muted') {
+    if (!$autoStatus) return;
+    $autoStatus.className = `small text-${tone}`;
+    $autoStatus.textContent = text;
+  }
+
+  async function detectLocalTool(showDialog = false) {
+    if (!$autoBtn && !$autoManageBtn) return false;
+    try {
+      const res = await fetch(`${LOCAL_TOOL}/status`, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-store',
+      });
+      const data = await res.json();
+      if (!data?.success) throw new Error('status failed');
+      const paired = !!localStorage.getItem(LOCAL_TOKEN_KEY);
+      if (data.configured && paired) setAutoStatus('本機工具已就緒。', 'success');
+      else if (data.configured) setAutoStatus('本機工具已設定，請先輸入本機配對碼。', 'warning');
+      else setAutoStatus('本機工具已安裝，尚未完成設定。', 'warning');
+      return true;
+    } catch (err) {
+      setAutoStatus('未偵測到本機工具。', 'danger');
+      if (showDialog) {
+        Swal.fire({
+          icon: 'info',
+          title: '尚未安裝本機工具',
+          text: '請先在這台電腦安裝 TPC Auto Uploader，安裝完成後按「重新偵測本機工具」。',
+          confirmButtonText: '知道了',
+        });
+      }
+      return false;
+    }
+  }
+
+  async function openSettings() {
+    try {
+      const res = await fetch(`${LOCAL_TOOL}/open-settings`, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-store',
+      });
+      const data = await res.json();
+      if (!data?.success) throw new Error(data?.message || '無法開啟設定');
+      setAutoStatus('已開啟本機設定視窗。', 'primary');
+    } catch (err) {
+      await detectLocalTool(true);
+    }
+  }
+
+  async function ensureLocalToken() {
+    const exists = localStorage.getItem(LOCAL_TOKEN_KEY);
+    if (exists) return exists;
+    const ans = await Swal.fire({
+      icon: 'question',
+      title: '輸入本機配對碼',
+      text: '請從 TPC Auto Uploader 本機設定視窗複製配對碼。',
+      input: 'text',
+      inputPlaceholder: '貼上本機配對碼',
+      showCancelButton: true,
+      confirmButtonText: '儲存',
+      cancelButtonText: '取消',
+      inputValidator: (value) => (!value ? '請輸入配對碼' : undefined),
+    });
+    if (!ans.isConfirmed) return '';
+    const token = String(ans.value || '').trim();
+    localStorage.setItem(LOCAL_TOKEN_KEY, token);
+    return token;
+  }
+
+  async function autoUpload() {
+    const picked = validateBaseSelection();
+    if (!picked) return;
+
+    const available = await detectLocalTool(true);
+    if (!available) return;
+    const localToken = await ensureLocalToken();
+    if (!localToken) return;
+
+    Swal.fire({
+      title: '自動下載中…',
+      html: '正在呼叫本機工具下載 Excel',
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    try {
+      const res = await fetch(`${LOCAL_TOOL}/sync`, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', 'X-TPC-Local-Token': localToken },
+        body: JSON.stringify({
+          withdraw_date: picked.date,
+          contractor_code: picked.code,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          localStorage.removeItem(LOCAL_TOKEN_KEY);
+          setAutoStatus('配對碼不正確，請重新輸入。', 'danger');
+        }
+        throw new Error(data?.message || `本機工具下載失敗（${res.status}）`);
+      }
+      const blob = await res.blob();
+      const fileName = res.headers.get('X-TPC-Filename') || `auto_${picked.code}_${picked.date}.xlsx`;
+      const file = new File([blob], fileName, {
+        type: blob.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      await importFiles([file], picked.code, picked.date);
+    } catch (err) {
+      Swal.update({
+        icon: 'error',
+        title: '自動上傳失敗',
+        text: err?.message || '發生錯誤',
+        showConfirmButton: true,
+      });
+    }
+  }
+
+  $autoDetectBtn?.addEventListener('click', () => detectLocalTool(true));
+  $autoManageBtn?.addEventListener('click', openSettings);
+  $autoBtn?.addEventListener('click', autoUpload);
+  detectLocalTool(false);
 })();
