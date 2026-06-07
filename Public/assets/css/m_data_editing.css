@@ -48,16 +48,11 @@
   margin-bottom: .5rem; /* 與右欄一致的緊湊感 */
 }
 
-/* 上傳模式切換 */
-.upload-mode-tabs .nav-link {
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  color: var(--bs-body-color);
-}
-.upload-mode-tabs .nav-link.active {
-  border-color: var(--bs-primary);
-  background: var(--bs-primary);
-  color: #fff;
+/* 上傳主要操作 */
+.upload-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
 }
 
 /* 近一個月提領概覽：可捲動區 */
