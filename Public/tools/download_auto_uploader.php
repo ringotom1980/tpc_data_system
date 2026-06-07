@@ -6,8 +6,8 @@ require_login();
 
 $files = [
   'installer' => [
-    'path' => __DIR__ . '/../../tools/auto_uploader/install_tpc_auto_uploader.cmd',
-    'name' => 'install_tpc_auto_uploader.cmd',
+    'path' => __DIR__ . '/TPCAutoUploaderSetup.exe',
+    'name' => 'TPCAutoUploaderSetup.exe',
     'type' => 'application/octet-stream',
   ],
   'script' => [

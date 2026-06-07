@@ -367,12 +367,64 @@
     return token;
   }
 
-  async function autoUpload() {
-    const picked = validateBaseSelection();
-    if (!picked) return;
+  async function askAutoUploadParams() {
+    const today = new Date().toISOString().slice(0, 10);
+    const dateValue = ($date?.value || today).trim();
+    const options = Array.from($contractor?.options || [])
+      .map((opt) => {
+        const code = (opt.dataset?.code || '').trim() || (opt.textContent || '').trim().split('-')[0].trim();
+        const label = (opt.textContent || '').trim();
+        if (!code || !label) return '';
+        const selected = code === getContractorCode() ? ' selected' : '';
+        return `<option value="${esc(code)}"${selected}>${esc(label)}</option>`;
+      })
+      .filter(Boolean)
+      .join('');
 
+    if (!options) {
+      Swal.fire({ icon: 'warning', title: '承攬商清單尚未載入' });
+      return null;
+    }
+
+    const ans = await Swal.fire({
+      title: '自動上傳',
+      html: `
+        <div class="text-start">
+          <label class="form-label" for="autoUploadDate">提領日期</label>
+          <input id="autoUploadDate" type="date" class="form-control mb-3" value="${esc(dateValue)}">
+          <label class="form-label" for="autoUploadContractor">承攬商</label>
+          <select id="autoUploadContractor" class="form-select">${options}</select>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '確認自動上傳',
+      cancelButtonText: '取消',
+      focusConfirm: false,
+      preConfirm: () => {
+        const date = document.getElementById('autoUploadDate')?.value || '';
+        const code = document.getElementById('autoUploadContractor')?.value || '';
+        if (!date) {
+          Swal.showValidationMessage('請選擇提領日期');
+          return false;
+        }
+        if (!code) {
+          Swal.showValidationMessage('請選擇承攬商');
+          return false;
+        }
+        return { date, code };
+      },
+    });
+
+    return ans.isConfirmed ? ans.value : null;
+  }
+
+  async function autoUpload() {
     const available = await detectLocalTool(true);
     if (!available) return;
+
+    const picked = await askAutoUploadParams();
+    if (!picked) return;
+
     const localToken = await ensureLocalToken();
     if (!localToken) return;
 
