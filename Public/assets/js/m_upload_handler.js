@@ -17,7 +17,7 @@
   const $autoStatus = document.getElementById('auto_upload_status');
   const LOCAL_TOOL = 'http://127.0.0.1:17888';
   const LOCAL_TOKEN_KEY = 'tpc_auto_uploader_token';
-  const INSTALLER_URL = `${BASE}/tools/TPCAutoUploaderSetup.exe`;
+  const INSTALLER_URL = `${BASE}/tools/TPCAutoUploaderSetup.zip`;
 
   if (!$btn && !$autoBtn) return;
 
@@ -298,7 +298,7 @@
   function downloadInstaller() {
     const link = document.createElement('a');
     link.href = INSTALLER_URL;
-    link.download = 'TPCAutoUploaderSetup.exe';
+    link.download = 'TPCAutoUploaderSetup.zip';
     document.body.appendChild(link);
     link.click();
     link.remove();

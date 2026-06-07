@@ -8,7 +8,7 @@
 
 - `TPCAutoUploaderSetup.exe`
 
-雙擊 `TPCAutoUploaderSetup.exe`，安裝精靈會把本機工具安裝到使用者電腦並啟動。這個安裝檔已包含 Python 執行環境，使用者不需要另外安裝 Python。
+目前網站會下載 `TPCAutoUploaderSetup.zip`。請先解壓縮，再雙擊裡面的 `TPCAutoUploaderSetup.exe`。安裝精靈會把本機工具安裝到使用者電腦並啟動。這個安裝檔已包含 Python 執行環境，使用者不需要另外安裝 Python。
 
 從專案資料夾直接執行時：
 
