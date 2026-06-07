@@ -5,6 +5,11 @@ require_once __DIR__ . '/../../config/auth.php';
 require_login();
 
 $files = [
+  'installer' => [
+    'path' => __DIR__ . '/../../tools/auto_uploader/install_tpc_auto_uploader.cmd',
+    'name' => 'install_tpc_auto_uploader.cmd',
+    'type' => 'application/octet-stream',
+  ],
   'script' => [
     'path' => __DIR__ . '/../../tools/auto_uploader/tpc_auto_uploader.py',
     'name' => 'tpc_auto_uploader.py',
@@ -22,7 +27,7 @@ $files = [
   ],
 ];
 
-$key = (string)($_GET['file'] ?? 'script');
+$key = (string)($_GET['file'] ?? 'installer');
 if (!isset($files[$key]) || !is_file($files[$key]['path'])) {
   http_response_code(404);
   header('Content-Type: text/plain; charset=utf-8');

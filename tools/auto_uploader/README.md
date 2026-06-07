@@ -6,10 +6,9 @@
 
 從網站下載時，請下載：
 
-- `tpc_auto_uploader.py`
-- `run_tpc_auto_uploader.cmd`
+- `install_tpc_auto_uploader.cmd`
 
-把兩個檔案放在同一個資料夾，雙擊 `run_tpc_auto_uploader.cmd`。
+雙擊 `install_tpc_auto_uploader.cmd`，安裝程式會下載本機工具到使用者電腦並啟動。
 
 從專案資料夾直接執行時：
 

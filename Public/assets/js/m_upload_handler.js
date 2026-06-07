@@ -14,10 +14,10 @@
   const $date = document.getElementById('withdraw_date');
   const $autoBtn = document.getElementById('auto_upload_btn');
   const $autoManageBtn = document.getElementById('auto_upload_manage_btn');
-  const $autoDetectBtn = document.getElementById('auto_upload_detect_btn');
   const $autoStatus = document.getElementById('auto_upload_status');
   const LOCAL_TOOL = 'http://127.0.0.1:17888';
   const LOCAL_TOKEN_KEY = 'tpc_auto_uploader_token';
+  const INSTALLER_URL = `${BASE}/tools/download_auto_uploader.php?file=installer`;
 
   if (!$btn && !$autoBtn) return;
 
@@ -313,18 +313,26 @@
     } catch (err) {
       setAutoStatus('未偵測到本機工具。', 'danger');
       if (showDialog) {
-        Swal.fire({
+        const ans = await Swal.fire({
           icon: 'info',
           title: '尚未安裝本機工具',
-          html: '請先下載「本機工具」與「啟動檔」，放在同一個資料夾後執行啟動檔。<br>啟動完成後按「重新偵測本機工具」。',
-          confirmButtonText: '知道了',
+          html: '自動上傳需要先安裝 TPC Auto Uploader。<br>安裝完成並啟動後，再回來點「自動上傳」。',
+          showCancelButton: true,
+          confirmButtonText: '安裝',
+          cancelButtonText: '考慮看看',
+          reverseButtons: true,
         });
+        if (ans.isConfirmed) {
+          window.location.href = INSTALLER_URL;
+        }
       }
       return false;
     }
   }
 
   async function openSettings() {
+    const available = await detectLocalTool(true);
+    if (!available) return;
     try {
       const res = await fetch(`${LOCAL_TOOL}/open-settings`, {
         method: 'POST',
@@ -411,8 +419,6 @@
     }
   }
 
-  $autoDetectBtn?.addEventListener('click', () => detectLocalTool(true));
   $autoManageBtn?.addEventListener('click', openSettings);
   $autoBtn?.addEventListener('click', autoUpload);
-  detectLocalTool(false);
 })();
