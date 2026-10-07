@@ -1,0 +1,21 @@
+Options -Indexes
+RewriteEngine On
+
+# Public certificate validation remains available. Other dot paths are denied.
+RewriteRule (^|/)\.(?!well-known(?:/|$)) - [F,L,NC]
+RewriteRule (^|/)(?:config|vendor|TCPDF)(?:/|$) - [F,L,NC]
+RewriteRule \.(?:sql|log|bak|backup|ini|env)(?:/|$) - [F,L,NC]
+RewriteRule (^|/)\.ftp-deploy-sync-state\.json$ - [F,L,NC]
+
+# SOURCE_COMMIT is the only directly accessible runtime resource.
+RewriteCond %{ENV:REDIRECT_STATUS} ^$
+RewriteRule ^tpc-runtime-v1/(?!SOURCE_COMMIT$) - [F,L,NC]
+RewriteRule ^tpc-runtime-v1/?$ - [F,L,NC]
+RewriteRule ^tpc-runtime-v1/(?!Public/|SOURCE_COMMIT$) - [F,L,NC]
+RewriteRule ^tpc_data_system/(?!Public(?:/|$)) - [F,L,NC]
+
+# Activation marker: change only 0 to 1 in the approved active copy.
+RewriteRule ^ - [E=TPC_RUNTIME_ENABLED:0]
+RewriteRule ^$ tpc_data_system/Public/ [L,R=302]
+RewriteCond %{ENV:TPC_RUNTIME_ENABLED} =1
+RewriteRule ^tpc_data_system/Public/(.*)$ tpc-runtime-v1/Public/$1 [L]

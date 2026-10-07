@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../../config/auth.php';
-require_once __DIR__ . '/../../config/db_connection.php'; // 提供 $conn = PDO
+require_once TPC_PRESERVED_APP . '/config/db_connection.php'; // 提供 $conn = PDO
 
 // === POST：AJAX 登入 ===
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {

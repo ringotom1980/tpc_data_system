@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../../config/auth.php';
 require_login();
-require_once __DIR__ . '/../../../config/db_connection.php';
+require_once TPC_PRESERVED_APP . '/config/db_connection.php';
 
 header('Content-Type: application/json; charset=utf-8');
 

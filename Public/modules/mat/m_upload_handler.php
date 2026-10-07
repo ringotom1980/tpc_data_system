@@ -11,12 +11,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 require_once __DIR__ . '/../../../config/auth.php';
 require_login();
 
-require_once __DIR__ . '/../../../config/db_connection.php'; // 提供 PDO $conn
+require_once TPC_PRESERVED_APP . '/config/db_connection.php'; // 提供 PDO $conn
 
 // ===== Autoload（依你的實際結構優先找 Public/vendor，再找根目錄 vendor）=====
 $autoloads = [
-    __DIR__ . '/../../vendor/autoload.php',   // tpc_data_system/Public/vendor/autoload.php
-    __DIR__ . '/../../../vendor/autoload.php' // tpc_data_system/vendor/autoload.php
+    TPC_PRESERVED_APP . '/Public/vendor/autoload.php',   // tpc_data_system/Public/vendor/autoload.php
+    TPC_PRESERVED_APP . '/vendor/autoload.php' // tpc_data_system/vendor/autoload.php
 ];
 $loaded = false;
 foreach ($autoloads as $p) {
@@ -29,8 +29,8 @@ foreach ($autoloads as $p) {
 // 後備：若你自有 Autoloader（放 Public/ 或根目錄）
 if (!$loaded) {
     $alts = [
-        __DIR__ . '/../../Autoloader.php',    // tpc_data_system/Public/Autoloader.php
-        __DIR__ . '/../../../Autoloader.php', // tpc_data_system/Autoloader.php
+        TPC_PRESERVED_APP . '/Public/Autoloader.php',    // tpc_data_system/Public/Autoloader.php
+        TPC_PRESERVED_APP . '/Autoloader.php', // tpc_data_system/Autoloader.php
     ];
     foreach ($alts as $p) {
         if (is_file($p)) {

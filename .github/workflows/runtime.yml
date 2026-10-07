@@ -1,0 +1,27 @@
+name: Publish TPC runtime
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tpc-runtime-publisher
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check PHP syntax
+        run: |
+          while IFS= read -r -d '' file; do php -l "$file"; done < <(find Public config -name '*.php' -print0)
+      - name: Check artifact safety
+        run: python3 scripts/test_runtime.py
+      - name: Publish allowlisted runtime
+        run: bash scripts/publish_runtime.sh

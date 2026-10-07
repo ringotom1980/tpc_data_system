@@ -2,6 +2,8 @@
 // tpc_data_system/config/auth.php
 declare(strict_types=1);
 
+define('TPC_PRESERVED_APP', dirname(__DIR__, 2) . '/tpc_data_system');
+
 /**
  * 啟動安全的 Session、提供 CSRF、登入/登出、取得使用者、與 require_login()
  * 其他頁面引入本檔後，可直接呼叫 require_login( );

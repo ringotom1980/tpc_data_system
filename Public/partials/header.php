@@ -10,11 +10,7 @@ declare(strict_types=1);
 if (!function_exists('public_base')) {
     function public_base(): string
     {
-        $script = $_SERVER['SCRIPT_NAME'] ?? '';
-        $script = str_replace('\\', '/', $script);
-        $pos = stripos($script, '/Public/');
-        if ($pos !== false) return rtrim(substr($script, 0, $pos + 7), '/');
-        return '/Public';
+        return '/tpc_data_system/Public';
     }
 }
 

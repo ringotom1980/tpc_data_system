@@ -5,8 +5,8 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../../../config/auth.php';
 require_login();
-require_once __DIR__ . '/../../../config/db_connection.php'; // 提供 $conn (PDO)
-require_once __DIR__ . '/../../TCPDF/tcpdf.php';             // TCPDF 路徑（相對於本檔）
+require_once TPC_PRESERVED_APP . '/config/db_connection.php'; // 提供 $conn (PDO)
+require_once TPC_PRESERVED_APP . '/Public/TCPDF/tcpdf.php';             // TCPDF 路徑（相對於本檔）
 
 // 讀取參數（用 GET，與前端列印按鈕一致）
 $contractor_code = trim((string)($_GET['contractor_code'] ?? ''));
@@ -138,7 +138,7 @@ $pdf->SetAutoPageBreak(true, 12);
 
 /* ★ 字型（要在 AddPage 之前設定，第一頁才會套用） */
 $pdf->setFontSubsetting(true);
-$fontPath = __DIR__ . '/../../TCPDF/fonts/TaipeiSansTCBeta-Regular.ttf';
+$fontPath = TPC_PRESERVED_APP . '/Public/TCPDF/fonts/TaipeiSansTCBeta-Regular.ttf';
 $fontname = TCPDF_FONTS::addTTFfont($fontPath, 'TrueTypeUnicode', '', 96) ?: 'cid0ct';
 $pdf->fontname    = $fontname;
 $pdf->headerTitle = '台電苗栗區處材料管理科-領退料統計';
