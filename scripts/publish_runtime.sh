@@ -11,7 +11,7 @@ remote_url=https://github.com/ringotom1980/tpc_data_system.git
 [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]
 header=$(git config --get http.https://github.com/.extraheader)
 [[ -n "$header" ]]
-remote_git() { git -c "http.https://github.com/.extraheader=$header" "$@"; }
+remote_git() { git -c http.https://github.com/.extraheader= -c "http.https://github.com/.extraheader=$header" "$@"; }
 current_main() { remote_git ls-remote "$remote_url" refs/heads/main | awk '{print $1}'; }
 [[ "$(current_main)" == "$GITHUB_SHA" ]] || { echo 'Refusing stale source'; exit 1; }
 python3 scripts/build_runtime.py --source "$source_dir" --output "$artifact_dir" --sha "$GITHUB_SHA" > "$RUNNER_TEMP/tpc-runtime-manifest.json"
