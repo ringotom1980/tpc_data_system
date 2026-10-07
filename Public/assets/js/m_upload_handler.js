@@ -1,0 +1,485 @@
+// Public/assets/js/m_upload_handler.js
+/* global Swal, bootstrap */
+(function () {
+  'use strict';
+
+  const BASE = (window.PUBLIC_BASE || '').replace(/\/+$/, '');
+  const API = BASE + '/modules/mat/m_upload_handler.php';
+
+  const $file =
+    document.getElementById('upload_files_input') || document.getElementById('upload_file');
+  const $btn =
+    document.getElementById('upload_files_btn') || document.getElementById('btnUpload');
+  const $contractor = document.getElementById('contractor_select');
+  const $date = document.getElementById('withdraw_date');
+  const $autoBtn = document.getElementById('auto_upload_btn');
+  const $autoManageBtn = document.getElementById('auto_upload_manage_btn');
+  const $autoStatus = document.getElementById('auto_upload_status');
+  const LOCAL_TOOL = 'http://127.0.0.1:17888';
+  const LOCAL_TOKEN_KEY = 'tpc_auto_uploader_token';
+  const INSTALLER_URL = `${BASE}/tools/TPCAutoUploaderSetup.zip`;
+
+  if (!$btn && !$autoBtn) return;
+
+  function esc(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // ★ 修正：優先讀取 data-code，若沒有再回退文字切割
+  function getContractorCode() {
+    const opt = $contractor?.selectedOptions?.[0];
+    if (!opt) return '';
+    const dc = (opt.dataset?.code || '').trim();
+    if (dc) return dc;
+    const txt = (opt.textContent || '').trim();
+    return (txt.split('-')[0] || '').trim();
+  }
+
+  function updateUploadReady() {
+    const hasDate = !!($date?.value || '').trim();
+    const hasCode = !!getContractorCode();
+    const hasFiles = !!($file?.files || []).length;
+    if ($btn) $btn.disabled = !(hasDate && hasCode && hasFiles);
+  }
+
+  $date?.addEventListener('change', updateUploadReady);
+  $contractor?.addEventListener('change', updateUploadReady);
+  $file?.addEventListener('change', updateUploadReady);
+  updateUploadReady();
+
+  function ensureUnknownModal() {
+    if (document.getElementById('unknownModal')) return;
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `
+<div class="modal fade" id="unknownModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">發現新材料編號（請勾選要加入材料清單）</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+    </div>
+    <div class="modal-body">
+      <p class="text-muted small mb-2">取消勾選或刪除＝此次不上到材料清單（但上傳明細仍會寫入）。</p>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead><tr>
+            <th style="width:56px;" class="text-center"><input id="chkAllUnknown" class="form-check-input" type="checkbox" checked></th>
+            <th style="width:200px;">材料編號</th>
+            <th>名稱/規格</th>
+            <th style="width:56px;"></th>
+          </tr></thead>
+          <tbody id="unknownTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="unknownCancel" type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+      <button id="unknownConfirm" type="button" class="btn btn-primary">確定新增並完成匯入</button>
+    </div>
+  </div></div>
+</div>`,
+    );
+  }
+
+  function presentUnknownModal(unknownMap) {
+    // unknownMap: {material_number => name_spec}
+    ensureUnknownModal();
+    const modalEl = document.getElementById('unknownModal');
+    const tbody = document.getElementById('unknownTbody');
+    const chkAll = document.getElementById('chkAllUnknown');
+    const btnOk = document.getElementById('unknownConfirm');
+
+    const entries = Object.entries(unknownMap); // [mn, name]
+    tbody.innerHTML = entries
+      .map(
+        ([mn, name]) => `
+      <tr data-no="${esc(mn)}">
+        <td class="text-center"><input class="form-check-input chkRow" type="checkbox" checked></td>
+        <td><code>${esc(mn)}</code></td>
+        <td>${esc(name || '')}</td>
+        <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btnDel">刪除</button></td>
+      </tr>`,
+      )
+      .join('');
+
+    chkAll.onchange = () =>
+      tbody.querySelectorAll('.chkRow').forEach((c) => (c.checked = chkAll.checked));
+    tbody.onclick = (ev) => {
+      const b = ev.target.closest('.btnDel');
+      if (!b) return;
+      b.closest('tr')?.remove();
+    };
+
+    return new Promise((resolve) => {
+      let ok = false;
+      btnOk.onclick = () => {
+        const addList = Array.from(tbody.querySelectorAll('tr'))
+          .filter((tr) => tr.querySelector('.chkRow')?.checked)
+          .map((tr) => tr.getAttribute('data-no'))
+          .filter(Boolean);
+        if (!addList.length) {
+          Swal.fire({
+            icon: 'question',
+            title: '不新增任何新料號到材料清單？',
+            text: '按「是」僅寫入上傳明細（不補材料清單）。',
+            showCancelButton: true,
+            confirmButtonText: '是，直接匯入',
+            cancelButtonText: '返回選擇',
+          }).then((ans) => {
+            if (ans.isConfirmed) {
+              ok = true;
+              bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+              resolve([]);
+            }
+          });
+          return;
+        }
+        ok = true;
+        bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        resolve(addList);
+      };
+      modalEl.addEventListener(
+        'hidden.bs.modal',
+        () => {
+          if (!ok) resolve(null);
+        },
+        { once: true },
+      );
+
+      Swal.close();
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    });
+  }
+
+  async function analyzeFile(file, contractorCode, date) {
+    const fd = new FormData();
+    fd.append('action', 'analyze');
+    fd.append('file', file);
+    fd.append('contractor_code', contractorCode);
+    fd.append('withdraw_date', date);
+    const res = await fetch(API, { method: 'POST', body: fd, credentials: 'same-origin' });
+    if (!res.ok) throw new Error(`分析失敗（${res.status}）`);
+    const data = await res.json();
+    if (!data?.success) throw new Error(data?.message || '分析失敗');
+    return data; // { token, unknown_numbers[], preview_count, file }
+  }
+
+  async function confirmBatch(tokens, addList) {
+    const res = await fetch(API, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'confirm_batch', tokens, add_numbers: addList || [] }),
+    });
+    if (!res.ok) throw new Error(`寫入失敗（${res.status}）`);
+    const data = await res.json();
+    if (!data?.success) throw new Error(data?.message || '寫入失敗');
+    return data; // { added_to_master, inserted_rows }
+  }
+
+  async function importFiles(files, code, date) {
+    Swal.fire({
+      title: '分析中…',
+      html: `0 / ${files.length}`,
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    try {
+      const tokens = [];
+      const unknownMap = {}; // mn => name
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        Swal.update({ html: `${i + 1} / ${files.length}<br><small>${esc(f.name)}</small>` });
+        const r = await analyzeFile(f, code, date);
+        tokens.push(r.token);
+        if (Array.isArray(r.unknown_numbers)) {
+          for (const u of r.unknown_numbers) {
+            const mn = String(u.material_number ?? '');
+            if (!mn) continue;
+            if (!(mn in unknownMap)) unknownMap[mn] = u.name_specification || '';
+          }
+        }
+      }
+
+      // 若有新料號 → 讓使用者一次勾選
+      let addList = [];
+      if (Object.keys(unknownMap).length) {
+        const picked = await presentUnknownModal(unknownMap);
+        if (picked === null) throw new Error('已取消上傳流程');
+        addList = picked; // 可能是空陣列（代表不上材料清單）
+      }
+
+      // 開始寫入
+      Swal.fire({
+        title: '寫入中…',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => Swal.showLoading(),
+      });
+      const res = await confirmBatch(tokens, addList);
+
+      // ✅ 寫入成功 → 通知左欄概覽刷新（m_data_editing.js 會收到 mat:uploaded 並呼叫 loadOverview）
+      document.dispatchEvent(new CustomEvent('mat:uploaded'));
+
+      // ✅ 清空承攬商與提領日期
+      if ($contractor) {
+        $contractor.selectedIndex = 0;
+        $contractor.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if ($date) {
+        $date.value = '';
+        $date.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      Swal.update({
+        icon: 'success',
+        title: '完成',
+        html: `材料清單新增：<b>${res.added_to_master}</b> 筆<br>明細寫入：<b>${res.inserted_rows}</b> 筆`,
+        showConfirmButton: true,
+      });
+      if ($file) $file.value = '';
+      updateUploadReady();
+    } catch (err) {
+      Swal.update({
+        icon: 'error',
+        title: '上傳中止',
+        text: err?.message || '發生錯誤',
+        showConfirmButton: true,
+      });
+      updateUploadReady();
+    }
+  }
+
+  function validateBaseSelection() {
+    const code = getContractorCode();
+    const date = ($date?.value || '').trim();
+    if (!code && !date) {
+      Swal.fire({ icon: 'warning', title: '請先選擇承攬商及提領日期' });
+      return null;
+    }
+    if (!code) {
+      Swal.fire({ icon: 'warning', title: '請先選擇承攬商' });
+      return null;
+    }
+    if (!date) {
+      Swal.fire({ icon: 'warning', title: '請先選擇提領日期' });
+      return null;
+    }
+    return { code, date };
+  }
+
+  $btn?.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    const files = Array.from($file?.files || []);
+    if (!files.length) {
+      Swal.fire({ icon: 'warning', title: '請先選擇檔案' });
+      return;
+    }
+
+    const picked = validateBaseSelection();
+    if (!picked) return;
+    await importFiles(files, picked.code, picked.date);
+  });
+
+  function setAutoStatus(text, tone = 'muted') {
+    if (!$autoStatus) return;
+    $autoStatus.className = `small text-${tone}`;
+    $autoStatus.textContent = text;
+  }
+
+  function downloadInstaller() {
+    const link = document.createElement('a');
+    link.href = INSTALLER_URL;
+    link.download = 'TPCAutoUploaderSetup.zip';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  async function detectLocalTool(showDialog = false) {
+    if (!$autoBtn && !$autoManageBtn) return false;
+    try {
+      const res = await fetch(`${LOCAL_TOOL}/status`, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-store',
+      });
+      const data = await res.json();
+      if (!data?.success) throw new Error('status failed');
+      const paired = !!localStorage.getItem(LOCAL_TOKEN_KEY);
+      if (data.configured && paired) setAutoStatus('本機工具已就緒。', 'success');
+      else if (data.configured) setAutoStatus('本機工具已設定，請先輸入本機配對碼。', 'warning');
+      else setAutoStatus('本機工具已安裝，尚未完成設定。', 'warning');
+      return true;
+    } catch (err) {
+      setAutoStatus('未偵測到本機工具。', 'danger');
+      if (showDialog) {
+        const ans = await Swal.fire({
+          icon: 'info',
+          title: '尚未安裝本機工具',
+          html: '自動上傳需要先安裝 TPC Auto Uploader。<br>安裝完成並啟動後，再回來點「自動上傳」。',
+          showCancelButton: true,
+          confirmButtonText: '安裝',
+          cancelButtonText: '考慮看看',
+          reverseButtons: true,
+        });
+        if (ans.isConfirmed) {
+          downloadInstaller();
+        }
+      }
+      return false;
+    }
+  }
+
+  async function openSettings() {
+    const available = await detectLocalTool(true);
+    if (!available) return;
+    try {
+      const res = await fetch(`${LOCAL_TOOL}/open-settings`, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-store',
+      });
+      const data = await res.json();
+      if (!data?.success) throw new Error(data?.message || '無法開啟設定');
+      setAutoStatus('已開啟本機設定視窗。', 'primary');
+    } catch (err) {
+      await detectLocalTool(true);
+    }
+  }
+
+  async function ensureLocalToken() {
+    const exists = localStorage.getItem(LOCAL_TOKEN_KEY);
+    if (exists) return exists;
+    const ans = await Swal.fire({
+      icon: 'question',
+      title: '輸入本機配對碼',
+      text: '請從 TPC Auto Uploader 本機設定視窗複製配對碼。',
+      input: 'text',
+      inputPlaceholder: '貼上本機配對碼',
+      showCancelButton: true,
+      confirmButtonText: '儲存',
+      cancelButtonText: '取消',
+      inputValidator: (value) => (!value ? '請輸入配對碼' : undefined),
+    });
+    if (!ans.isConfirmed) return '';
+    const token = String(ans.value || '').trim();
+    localStorage.setItem(LOCAL_TOKEN_KEY, token);
+    return token;
+  }
+
+  async function askAutoUploadParams() {
+    const today = new Date().toISOString().slice(0, 10);
+    const dateValue = ($date?.value || today).trim();
+    const options = Array.from($contractor?.options || [])
+      .map((opt) => {
+        const code = (opt.dataset?.code || '').trim() || (opt.textContent || '').trim().split('-')[0].trim();
+        const label = (opt.textContent || '').trim();
+        if (!code || !label) return '';
+        const selected = code === getContractorCode() ? ' selected' : '';
+        return `<option value="${esc(code)}"${selected}>${esc(label)}</option>`;
+      })
+      .filter(Boolean)
+      .join('');
+
+    if (!options) {
+      Swal.fire({ icon: 'warning', title: '承攬商清單尚未載入' });
+      return null;
+    }
+
+    const ans = await Swal.fire({
+      title: '自動上傳',
+      html: `
+        <div class="text-start">
+          <label class="form-label" for="autoUploadDate">提領日期</label>
+          <input id="autoUploadDate" type="date" class="form-control mb-3" value="${esc(dateValue)}">
+          <label class="form-label" for="autoUploadContractor">承攬商</label>
+          <select id="autoUploadContractor" class="form-select">${options}</select>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '確認自動上傳',
+      cancelButtonText: '取消',
+      focusConfirm: false,
+      preConfirm: () => {
+        const date = document.getElementById('autoUploadDate')?.value || '';
+        const code = document.getElementById('autoUploadContractor')?.value || '';
+        if (!date) {
+          Swal.showValidationMessage('請選擇提領日期');
+          return false;
+        }
+        if (!code) {
+          Swal.showValidationMessage('請選擇承攬商');
+          return false;
+        }
+        return { date, code };
+      },
+    });
+
+    return ans.isConfirmed ? ans.value : null;
+  }
+
+  async function autoUpload() {
+    const available = await detectLocalTool(true);
+    if (!available) return;
+
+    const picked = await askAutoUploadParams();
+    if (!picked) return;
+
+    const localToken = await ensureLocalToken();
+    if (!localToken) return;
+
+    Swal.fire({
+      title: '自動下載中…',
+      html: '正在呼叫本機工具下載 Excel',
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    try {
+      const res = await fetch(`${LOCAL_TOOL}/sync`, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', 'X-TPC-Local-Token': localToken },
+        body: JSON.stringify({
+          withdraw_date: picked.date,
+          contractor_code: picked.code,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          localStorage.removeItem(LOCAL_TOKEN_KEY);
+          setAutoStatus('配對碼不正確，請重新輸入。', 'danger');
+        }
+        throw new Error(data?.message || `本機工具下載失敗（${res.status}）`);
+      }
+      const blob = await res.blob();
+      const fileName = res.headers.get('X-TPC-Filename') || `auto_${picked.code}_${picked.date}.xlsx`;
+      const file = new File([blob], fileName, {
+        type: blob.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      await importFiles([file], picked.code, picked.date);
+    } catch (err) {
+      Swal.update({
+        icon: 'error',
+        title: '自動上傳失敗',
+        text: err?.message || '發生錯誤',
+        showConfirmButton: true,
+      });
+    }
+  }
+
+  $autoManageBtn?.addEventListener('click', openSettings);
+  $autoBtn?.addEventListener('click', autoUpload);
+})();
